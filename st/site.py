@@ -1,5 +1,5 @@
 """
-Class for observatory information
+Class for observation sites
 """
 
 import sys

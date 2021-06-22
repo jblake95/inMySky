@@ -1,9 +1,16 @@
+"""
+General tasks for inMySky
+"""
+
 import os
 import argparse as ap
 import numpy as np
 from astropy.table import Table
-from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+from datetime import (
+    datetime, 
+    timedelta
+)
 
 from st.tle import TLE
 from st.site import Site
@@ -84,25 +91,21 @@ def argParse():
     """
     parser = ap.ArgumentParser()
     
+    parser.add_argument('--data_dir',
+                        help='path to directory containing satcat and TLE catalogues',
+                        type=str,
+                        default='./data/')
+    
     parser.add_argument('--epoch',
-                        help='epoch for propagating TLEs, \n'
-                             'format: YYYY-mm-ddTHH:MM:SS.s [utc]',
+                        help='epoch for TLE propagation, format: YYYY-mm-ddTHH:MM:SS.s [utc]',
                         type=str,
                         default='now')
     
     parser.add_argument('--site',
-                        help='new sites can be added to st.site, \n'
-                             'e.g. "INT"',
+                        help='observation site for TLE propagation, e.g. "INT"\n'
+                             'NB: new sites can be added to st.site',
                         type=str,
                         default='INT')
-    
-    parser.add_argument('--log',
-                        help='toggle to generate session log',
-                        type=bool)
-    
-    parser.add_argument('--save',
-                        help='toggle to save output tle catalogue',
-                        type=bool)
     
     return parser.parse_args()
 
@@ -117,9 +120,9 @@ def parseInput():
     Returns
     -------
     epoch : datetime.datetime
-        
+        Epoch for TLE propagation
     site : st.site.Site
-        
+        Observation site for TLE propagation
     """
     args = argParse()
         
@@ -150,13 +153,13 @@ def loadCats(sat_path, tle_path):
     sat_cat : astropy.table.Table
         Table containing satcat information
     tle_cat : array-like
-        List of TLEs [st.TLE]
+        List of TLEs [st.tle.TLE]
     """
-    # load satellite catalogue
+    # load satcat catalogue
     if os.path.exists(SATCAT_PATH):
         sat_cat = Table.read(SATCAT_PATH, format='csv')
     else:
-        print('Invalid path to satellite catalogue...')
+        print('Invalid path to satcat catalogue...')
         quit()
     
     # load tle catalogue
@@ -181,37 +184,38 @@ def loadCats(sat_path, tle_path):
     else:
         print('Invalid path to TLE catalogue...')
         quit()
+    
     print('TLEs in catalogue: {}'.format(len(tle_cat)))
     
     return sat_cat, tle_cat
 
 def inSky(sat_cat, tle_cat, epoch, site, alt_limit):
     """
-    Propagate TLE catalogue to the desired epoch
+    Propagate TLE catalogue to desired epoch and check visibility
     
     Parameters
     ----------
     sat_cat : astropy.table.Table
-    
+        Table containing satcat information
     tle_cat : array-like
-    
+        List of TLEs [st.tle.TLE]
     epoch : datetime.datetime
-    
+        Epoch for TLE propagation
     site : st.site.Site
-    
+        Observation site for TLE propagation
     alt_limit : float
-    
+        Altitude limit for visibility check [degrees]
     
     Returns
     -------
     prop_table : astropy.table.Table
-    
+        Table of visible objects containing satcat and propagation information
     """
     # construct tle template and parse propagation info
     rolling_tle = TLE()
     rolling_tle.parse_propagation_info(epoch, site)
     
-    # modify the rolling dummy tle and propagate to desired epoch
+    # modify rolling tle and propagate to desired epoch
     propagation_log = Log(n_rows=len(tle_cat),
                           col_names=['NORAD_ID', 
                                      'NAME', 
@@ -283,10 +287,15 @@ def generateDummyTLE(epoch, site):
     
     Parameters
     ----------
+    epoch : datetime.datetime
+        Epoch for TLE propagation
+    site : st.site.Site
+        Observation site for TLE propagation
     
     Returns
     -------
-    
+    dummy_tle : st.tle.TLE
+        Dummy (empty) TLE for user selection
     """
     day_secs = 24 * 60 * 60
     delta_t = [timedelta(seconds=i) for i in np.arange(-day_secs / 2, day_secs / 2, 100)]
@@ -305,6 +314,10 @@ def onPick(event):
     ----------
     event : Picker event
         User picked a point
+    
+    Returns
+    -------
+    None
     """
     global tle_cat, sat_cat, dummy_tle, prev_obj, fig, pick_ax, info_ax, show_ax
     
@@ -376,10 +389,20 @@ def onPick(event):
     
     # store for next selection
     prev_obj = obj
+    
+    return None
 
 def searchSky():
     """
-    Run inMySky - interactive plot showing objects visible in user's sky
+    Run inMySky - interactive plot showing GSO objects visible in user's sky
+    
+    Parameters
+    ----------
+    None
+    
+    Returns
+    -------
+    None
     """
     global tle_cat, sat_cat, dummy_tle, prev_obj, fig, pick_ax, info_ax, show_ax
     
@@ -424,7 +447,3 @@ def searchSky():
     plt.show()
     
     return None
-
-if __name__ == "__main__":
-    
-    searchSky()

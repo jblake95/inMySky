@@ -1,5 +1,5 @@
 """
-Interactive plotting of GSO satellites in observer's sky
+Run inMySky - interactive plotting of GSO objects in user's sky
 """
 
 from utils import searchSky
