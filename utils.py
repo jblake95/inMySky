@@ -369,6 +369,9 @@ def onPick(event):
     
     show_ax.plot(ha, alt, 'r.')
     
+    show_ax.set_xlabel('Hour Angle [hrs]')
+    show_ax.set_ylabel('Altitude [deg]')
+    
     print('---------------------\n'
           'Selected object:\n'
           'Name:   {}\n'
@@ -442,6 +445,9 @@ def searchSky():
     
     show_ax.yaxis.tick_right()
     show_ax.yaxis.set_label_position('right')
+    
+    show_ax.set_xlabel('Hour Angle [hrs]')
+    show_ax.set_ylabel('Altitude [deg]')
     
     fig.canvas.mpl_connect('pick_event', onPick)
     plt.show()
